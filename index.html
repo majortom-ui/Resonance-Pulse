@@ -89,36 +89,43 @@
   /* Phone landscape: two-column layout so the whole screen stays visible
      without scrolling while a fingertip covers the rear camera + flash. */
   @media (orientation: landscape) {
-    body { padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); align-items: flex-start; }
+    body { padding: 10px 18px calc(10px + env(safe-area-inset-bottom)); align-items: flex-start; }
     .wrap { max-width: 100%; }
-    header { margin-bottom: 10px; }
-    h1 { font-size: 22px; }
+    header { margin-bottom: 4px; }
+    .eyebrow { display: none; }
+    h1 { font-size: 17px; line-height: 1.1; }
     .sub { display: none; }
-    .eyebrow { margin-bottom: 2px; }
 
     .stage {
       display: flex; flex-wrap: wrap; align-items: flex-start;
-      gap: 18px; padding: 16px; margin-top: 8px;
+      gap: 12px; padding: 10px; margin-top: 4px;
     }
     .pacer-zone {
-      flex: 0 0 190px;
+      flex: 0 0 170px;
       padding: 0;
     }
-    .pacer-orb { width: 96px; height: 96px; }
-    .ring-bpm { font-size: 22px; }
-    .pacer-label { font-size: 16px; margin-top: 10px; }
+    .pacer-orb { width: 76px; height: 76px; }
+    .ring-bpm { font-size: 18px; }
+    .ring-bpm-label { font-size: 8px; }
+    .pacer-label { font-size: 14px; margin-top: 6px; }
+    .pacer-sub { font-size: 8.5px; margin-top: 1px; }
 
-    .controls-col { flex: 1; min-width: 240px; }
-    canvas#wave { height: 40px; margin-top: 0; }
-    .hrv-panel { margin-top: 10px; padding: 10px 12px 6px; }
-    canvas#hrvwave { height: 54px; }
-    .progress-track { margin-top: 8px; }
-    .status-line { margin-top: 8px; font-size: 12.5px; }
-    button.primary { margin-top: 10px; padding: 12px; }
-    button.secondary { margin-top: 6px; padding: 10px; }
-    .result-grid { margin: 10px 0 0; }
+    .controls-col { flex: 1; min-width: 220px; }
+    canvas#wave { height: 32px; margin-top: 0; }
+    .hrv-panel { margin-top: 6px; padding: 8px 10px 5px; }
+    .hrv-panel-label { font-size: 9px; }
+    canvas#hrvwave { height: 42px; margin-top: 4px; }
+    .hrv-panel-sub { font-size: 9.5px; margin-top: 2px; }
+    .progress-track { margin-top: 6px; }
+    .status-line { margin-top: 5px; font-size: 11px; min-height: 14px; }
+    button.primary { margin-top: 7px; padding: 9px; font-size: 13px; }
+    button.secondary { margin-top: 5px; padding: 7px; font-size: 12px; }
+    .result-grid { margin: 7px 0 0; gap: 8px; }
+    .result-card { padding: 8px 10px; }
+    .result-card .val { font-size: 20px; }
+    .result-card .lbl { font-size: 8px; }
 
-    .hint { width: 100%; order: 3; margin-top: 12px; padding-top: 12px; font-size: 11.5px; }
+    .hint { display: none; }
     .disclaimer { display: none; }
   }
 </style>
@@ -484,8 +491,24 @@
       return;
     }
 
-    const median = [...ibis].sort((a, b) => a - b)[Math.floor(ibis.length / 2)];
-    const cleanIbis = ibis.filter(v => v > median * 0.75 && v < median * 1.35);
+    // Artifact correction: compare each interval to the one immediately
+    // before it (not a single global reference), rejecting any beat that
+    // jumps too far from its own neighbor. This is closer to how real HRV
+    // software (Kubios-style NN-interval correction) handles noisy raw
+    // data — a single bad early stretch can't throw off the whole session
+    // the way comparing everything to one global median could.
+    const cleanIbis = [];
+    let reference = ibis[0];
+    cleanIbis.push(ibis[0]);
+    for (let i = 1; i < ibis.length; i++) {
+      const pctChange = Math.abs(ibis[i] - reference) / reference;
+      if (pctChange <= 0.2) {
+        cleanIbis.push(ibis[i]);
+        reference = ibis[i];
+      }
+      // rejected beats don't update the reference, so a run of bad beats
+      // can't drag the comparison point along with them
+    }
     const rejectedCount = ibis.length - cleanIbis.length;
 
     if (cleanIbis.length < 6) {
