@@ -6,16 +6,9 @@
 <title>Pulse — camera HRV proof of concept</title>
 <style>
   :root {
-    --bg: #0a0d10;
-    --bg-panel: #12161b;
-    --bg-panel-raised: #181d24;
-    --line: #232a32;
-    --ink: #eef2f4;
-    --ink-dim: #8b98a3;
-    --pulse: #ff4d5e;
-    --pulse-dim: #7a2530;
-    --calm: #4fd1c5;
-    --warn: #e8b649;
+    --bg: #0a0d10; --bg-panel: #12161b; --bg-panel-raised: #181d24;
+    --line: #232a32; --ink: #eef2f4; --ink-dim: #8b98a3;
+    --pulse: #ff4d5e; --pulse-dim: #7a2530; --calm: #4fd1c5; --warn: #e8b649;
     --font-display: 'Cormorant Garamond', Georgia, serif;
     --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     --font-mono: 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
@@ -27,317 +20,122 @@
     }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; }
   body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--font-body);
-    overflow: hidden;
-    height: 100dvh;
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body);
+    min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 18px 40px;
   }
-
-  /* ---------- Rotate hint (shown in portrait) ---------- */
-  #rotateHint {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 30px;
-    z-index: 50;
-  }
-  @media (orientation: portrait) {
-    #rotateHint { display: flex; }
-    #mainLayout { display: none; }
-  }
-  .rotate-icon { font-size: 44px; margin-bottom: 14px; }
-  #rotateHint h2 {
-    font-family: var(--font-display);
-    font-weight: 600; font-size: 26px; margin: 0 0 8px;
-  }
-  #rotateHint p { color: var(--ink-dim); font-size: 14px; max-width: 32ch; line-height: 1.5; margin: 0; }
-
-  /* ---------- Main landscape layout ---------- */
-  #mainLayout {
-    display: flex;
-    height: 100dvh;
-    width: 100%;
-  }
-  #mainLayout.flipped .light-rail { order: 2; }
-  #mainLayout.flipped .content-col { order: 1; }
-
-  .flip-btn {
-    position: absolute;
-    top: env(safe-area-inset-top, 10px);
-    right: 10px;
-    z-index: 5;
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    border: 1px solid var(--line);
-    background: var(--bg-panel);
-    color: var(--ink-dim);
-    font-size: 15px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-  }
-
-  .light-rail {
-    width: 26vw;
-    min-width: 130px;
-    max-width: 190px;
-    flex-shrink: 0;
-    background: #ffffff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: background 200ms ease;
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-  .light-rail.dimmed { background: #cfd3d6; }
-  .light-rail-icon {
-    font-size: 30px;
-    opacity: 0.55;
-    margin-bottom: 10px;
-  }
-  .light-rail-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    color: #4a4f54;
-    text-align: center;
-    max-width: 18ch;
-    line-height: 1.5;
-    padding: 0 14px;
-  }
-
-  .content-col {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    padding: 10px 18px calc(10px + env(safe-area-inset-bottom)) 18px;
-    overflow-y: auto;
-  }
-
-  .top-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-  }
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    color: var(--ink-dim);
-  }
-  h1 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 20px;
-    margin: 2px 0 0;
-    letter-spacing: -0.01em;
-  }
+  .wrap { width: 100%; max-width: 460px; }
+  header { margin-bottom: 20px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 6px; }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.05; margin: 0 0 8px; letter-spacing: -0.01em; }
   h1 em { font-style: italic; color: var(--pulse); }
+  .sub { color: var(--ink-dim); font-size: 14.5px; line-height: 1.5; max-width: 38ch; }
 
-  .bpm-chip {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    background: var(--bg-panel);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 6px 14px;
-    transition: box-shadow 120ms ease-out, border-color 300ms ease;
-  }
-  .bpm-chip.beat { box-shadow: 0 0 0 6px var(--pulse-dim); border-color: var(--pulse); }
-  .bpm-chip .val { font-family: var(--font-display); font-size: 22px; font-weight: 600; }
-  .bpm-chip .lbl { font-family: var(--font-mono); font-size: 9px; color: var(--ink-dim); letter-spacing: 0.06em; }
+  .stage { position: relative; background: var(--bg-panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px; margin-top: 20px; overflow: hidden; }
 
-  .body-grid {
-    flex: 1;
-    display: flex;
-    gap: 14px;
-    margin-top: 8px;
-    min-height: 0;
-  }
-
-  /* ---------- Breathing pacer ---------- */
-  .pacer-zone {
-    flex: 1.1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-panel);
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    position: relative;
-    min-width: 0;
-  }
+  .pacer-zone { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
   .pacer-orb {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
+    width: 130px; height: 130px; border-radius: 50%;
     background: radial-gradient(circle at 40% 35%, #6fe3d4, var(--calm));
-    box-shadow: 0 0 40px -6px var(--calm);
-    transition: transform 5.5s ease-in-out;
-    transform: scale(0.72);
+    box-shadow: 0 0 50px -8px var(--calm);
+    transform: scale(0.7);
+    transition: transform 6s ease-in-out;
+    display: flex; align-items: center; justify-content: center;
   }
-  .pacer-orb.inhale { transform: scale(1.25); transition-duration: var(--phase-ms, 5.5s); }
-  .pacer-orb.exhale { transform: scale(0.72); transition-duration: var(--phase-ms, 5.5s); }
-  .pacer-label {
-    margin-top: 20px;
-    font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-  }
-  .pacer-sub {
-    margin-top: 4px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--ink-dim);
-    letter-spacing: 0.08em;
-  }
+  .pacer-orb.inhale { transform: scale(1.25); transition-duration: var(--phase-ms, 6s); }
+  .pacer-orb.exhale { transform: scale(0.7); transition-duration: var(--phase-ms, 6s); }
+  .pacer-inner { text-align: center; }
+  .ring-bpm { font-family: var(--font-display); font-size: 30px; font-weight: 600; line-height: 1; color: #06231f; }
+  .ring-bpm-label { font-family: var(--font-mono); font-size: 9px; color: #0a2e29; letter-spacing: 0.08em; margin-top: 2px; }
+  .pacer-label { margin-top: 16px; font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+  .pacer-sub { margin-top: 2px; font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); letter-spacing: 0.08em; }
 
-  /* ---------- Right column: HRV + status/controls ---------- */
-  .side-col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-  }
+  canvas#wave { width: 100%; height: 56px; display: block; margin-top: 16px; border-radius: 8px; }
 
-  .hrv-panel {
-    background: var(--bg-panel-raised);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 12px 14px 8px;
-  }
-  .hrv-panel-label {
-    display: flex; justify-content: space-between; align-items: baseline;
-    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; color: var(--ink-dim);
-  }
-  .hrv-panel-label span#coherenceScore { font-size: 12px; color: var(--calm); font-weight: 600; letter-spacing: normal; }
-  canvas#hrvwave { width: 100%; height: 64px; display: block; margin-top: 6px; }
-  .hrv-panel-sub { font-size: 10.5px; color: var(--ink-dim); text-align: center; margin-top: 4px; }
-
-  canvas#wave {
-    width: 100%; height: 40px; display: block;
-    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px;
-  }
-
-  .status-line { text-align: center; font-size: 12.5px; color: var(--ink-dim); min-height: 16px; }
+  .status-line { text-align: center; font-size: 14px; color: var(--ink-dim); margin-top: 12px; min-height: 20px; }
   .status-line.warn { color: var(--warn); }
   .status-line.good { color: var(--calm); }
 
-  .progress-track { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .progress-track { height: 3px; background: var(--line); border-radius: 2px; margin-top: 12px; overflow: hidden; }
   .progress-fill { height: 100%; width: 0%; background: var(--pulse); transition: width 200ms linear; }
 
-  .btn-row { display: flex; gap: 8px; }
-  button.primary, button.secondary {
-    flex: 1; padding: 11px; border-radius: 10px; font-family: var(--font-body);
-    font-size: 13px; font-weight: 600; cursor: pointer;
-  }
-  button.primary { border: none; background: var(--ink); color: var(--bg); }
+  button.primary { width: 100%; margin-top: 18px; padding: 15px; border-radius: 12px; border: none; background: var(--ink); color: var(--bg); font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; }
   button.primary:active { opacity: 0.8; }
-  button.secondary { border: 1px solid var(--line); background: transparent; color: var(--ink-dim); font-weight: 500; }
+  button.secondary { width: 100%; margin-top: 10px; padding: 13px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--ink-dim); font-family: var(--font-body); font-size: 14px; cursor: pointer; }
 
-  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .result-card { background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
-  .result-card .val { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
-  .result-card .lbl { font-family: var(--font-mono); font-size: 8.5px; color: var(--ink-dim); letter-spacing: 0.05em; }
+  .hrv-panel { margin-top: 16px; background: var(--bg-panel-raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px 10px; }
+  .hrv-panel-label { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--ink-dim); }
+  .hrv-panel-label span#coherenceScore { font-size: 13px; color: var(--calm); font-weight: 600; letter-spacing: normal; }
+  canvas#hrvwave { width: 100%; height: 76px; display: block; margin-top: 8px; }
+  .hrv-panel-sub { font-size: 11px; color: var(--ink-dim); text-align: center; margin-top: 4px; }
 
-  #debugInfo {
-    position: fixed;
-    top: env(safe-area-inset-top, 4px);
-    left: 4px;
-    z-index: 100;
-    background: rgba(0,0,0,0.85);
-    color: #4fd1c5;
-    font-family: monospace;
-    font-size: 10px;
-    line-height: 1.5;
-    padding: 6px 9px;
-    border-radius: 6px;
-    white-space: pre;
-  }
+  .results { display: none; margin-top: 6px; }
+  .results.show { display: block; }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0 4px; }
+  .result-card { background: var(--bg-panel-raised); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .result-card .val { font-family: var(--font-display); font-size: 30px; font-weight: 600; }
+  .result-card .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); letter-spacing: 0.06em; margin-top: 2px; }
+
+  .hint { font-size: 12.5px; color: var(--ink-dim); line-height: 1.55; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .hint strong { color: var(--ink); font-weight: 600; }
 
   video, .rawcanvas { display: none; }
+
+  .disclaimer { text-align: center; font-size: 11px; color: var(--ink-dim); margin-top: 26px; line-height: 1.5; opacity: 0.75; }
 </style>
 </head>
 <body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">PROOF OF CONCEPT · 01 · REAR CAMERA</div>
+    <h1>Read your <em>pulse</em><br>from a fingertip.</h1>
+    <div class="sub">Cover the rear camera and flash with a fingertip. Breathe along with the orb — watch your HRV wave respond.</div>
+  </header>
 
-<div id="rotateHint">
-  <div class="rotate-icon">📱↻</div>
-  <h2>Rotate to landscape</h2>
-  <p>Hold your phone sideways with your thumb over the front camera. If the camera ends up on the wrong side once rotated, tap the ⇄ button in the corner to flip the layout.</p>
-</div>
-
-<div id="mainLayout" class="flipped">
-  <button class="flip-btn" id="flipBtn" title="Camera on the other side?">⇄</button>
-  <div class="light-rail" id="lightRail">
-    <div class="light-rail-icon">👍</div>
-    <div class="light-rail-label" id="railLabel">Thumb here — cover the front camera fully</div>
-  </div>
-
-  <div class="content-col">
-    <div class="top-row">
-      <div>
-        <div class="eyebrow">PROOF OF CONCEPT · 01</div>
-        <h1>Resonance <em>pulse</em></h1>
+  <div class="stage">
+    <div class="pacer-zone">
+      <div class="pacer-orb" id="pacerOrb">
+        <div class="pacer-inner">
+          <div class="ring-bpm" id="bpmDisplay">—</div>
+          <div class="ring-bpm-label" id="bpmLabel">BPM</div>
+        </div>
       </div>
-      <div class="bpm-chip" id="bpmChip">
-        <span class="val" id="bpmDisplay">—</span>
-        <span class="lbl" id="bpmLabel">BPM</span>
+      <div class="pacer-label" id="pacerLabel">Get ready</div>
+      <div class="pacer-sub" id="pacerSub">6.0s IN · 6.0s OUT</div>
+    </div>
+
+    <canvas id="wave" width="600" height="112"></canvas>
+
+    <div class="hrv-panel">
+      <div class="hrv-panel-label">
+        <span>YOUR HRV WAVE</span>
+        <span id="coherenceScore">—</span>
+      </div>
+      <canvas id="hrvwave" width="600" height="90"></canvas>
+      <div class="hrv-panel-sub" id="hrvSub">Bigger, smoother waves = closer to your resonance frequency</div>
+    </div>
+
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="status-line" id="statusLine">Tap start, then cover the rear camera and flash with your fingertip.</div>
+
+    <button class="primary" id="startBtn">Start reading</button>
+    <button class="secondary" id="retryBtn" style="display:none">Measure again</button>
+
+    <div class="results" id="results">
+      <div class="result-grid">
+        <div class="result-card"><div class="val" id="avgBpm">—</div><div class="lbl">AVG BPM</div></div>
+        <div class="result-card"><div class="val" id="rmssd">—</div><div class="lbl">RMSSD · HRV (MS)</div></div>
       </div>
     </div>
 
-    <div class="body-grid">
-      <div class="pacer-zone">
-        <div class="pacer-orb" id="pacerOrb"></div>
-        <div class="pacer-label" id="pacerLabel">Get ready</div>
-        <div class="pacer-sub" id="pacerSub">6.0s IN · 6.0s OUT</div>
-      </div>
-
-      <div class="side-col">
-        <div class="hrv-panel">
-          <div class="hrv-panel-label">
-            <span>YOUR HRV WAVE</span>
-            <span id="coherenceScore">—</span>
-          </div>
-          <canvas id="hrvwave" width="500" height="64"></canvas>
-          <div class="hrv-panel-sub" id="hrvSub">Bigger, smoother waves = closer to resonance</div>
-        </div>
-
-        <canvas id="wave" width="500" height="40"></canvas>
-
-        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="status-line" id="statusLine">Rest your thumb over the front camera, then tap start.</div>
-
-        <div class="btn-row">
-          <button class="primary" id="startBtn">Start</button>
-          <button class="secondary" id="retryBtn" style="display:none">Again</button>
-        </div>
-
-        <div class="result-grid" id="results" style="display:none">
-          <div class="result-card"><div class="val" id="avgBpm">—</div><div class="lbl">AVG BPM</div></div>
-          <div class="result-card"><div class="val" id="rmssd">—</div><div class="lbl">RMSSD · HRV MS</div></div>
-        </div>
-      </div>
+    <div class="hint">
+      <strong>Why this works:</strong> your pulse changes how much light passes through your fingertip with every heartbeat. <strong>This is a prototype</strong> — hold still and stay quiet for a clean read.
     </div>
   </div>
-</div>
 
-<div id="debugInfo">measuring…</div>
+  <div class="disclaimer">Wellness prototype, not a medical device. Runs entirely on this device — nothing is recorded or sent anywhere.</div>
+</div>
 
 <video id="video" autoplay playsinline muted></video>
 <canvas id="rawcanvas" class="rawcanvas" width="60" height="60"></canvas>
@@ -347,7 +145,9 @@
   const startBtn = document.getElementById('startBtn');
   const retryBtn = document.getElementById('retryBtn');
   const statusLine = document.getElementById('statusLine');
-  const bpmChip = document.getElementById('bpmChip');
+  const pacerOrb = document.getElementById('pacerOrb');
+  const pacerLabel = document.getElementById('pacerLabel');
+  const pacerSub = document.getElementById('pacerSub');
   const bpmDisplay = document.getElementById('bpmDisplay');
   const bpmLabel = document.getElementById('bpmLabel');
   const progressFill = document.getElementById('progressFill');
@@ -363,62 +163,19 @@
   const hrvCtx = hrvCanvas.getContext('2d');
   const coherenceScoreEl = document.getElementById('coherenceScore');
   const hrvSubEl = document.getElementById('hrvSub');
-  const lightRail = document.getElementById('lightRail');
-  const railLabel = document.getElementById('railLabel');
-  const pacerOrb = document.getElementById('pacerOrb');
-  const pacerLabel = document.getElementById('pacerLabel');
-  const pacerSub = document.getElementById('pacerSub');
-  const flipBtn = document.getElementById('flipBtn');
-  const mainLayout = document.getElementById('mainLayout');
-  const debugInfo = document.getElementById('debugInfo');
-
-  function updateDebug() {
-    const styles = getComputedStyle(document.documentElement);
-    const cs = getComputedStyle(document.body);
-    const rail = document.getElementById('lightRail');
-    const railRect = rail.getBoundingClientRect();
-    const lines = [
-      'innerWidth: ' + window.innerWidth,
-      'innerHeight: ' + window.innerHeight,
-      'visualVP.w: ' + (window.visualViewport ? Math.round(window.visualViewport.width) : 'n/a'),
-      'devicePixelRatio: ' + window.devicePixelRatio,
-      'safe-l: ' + getComputedStyle(rail).paddingLeft,
-      'safe-r: ' + getComputedStyle(rail).paddingRight,
-      'rail L/R: ' + Math.round(railRect.left) + ' / ' + Math.round(railRect.right),
-      'rail width: ' + Math.round(railRect.width),
-      'flipped: ' + mainLayout.classList.contains('flipped')
-    ];
-    debugInfo.textContent = lines.join('\n');
-  }
-  window.addEventListener('resize', updateDebug);
-  window.addEventListener('orientationchange', () => setTimeout(updateDebug, 300));
-  setTimeout(updateDebug, 200);
-
-  flipBtn.addEventListener('click', () => {
-    mainLayout.classList.toggle('flipped');
-    updateDebug();
-  });
 
   const SESSION_MS = 45000;
   const CALIBRATION_MS = 3000;
   const MIN_IBI = 400;
   const MAX_IBI = 1500;
   const SMOOTH_TAPS = 3;
-  const PHASE_SEC = 6.0; // default resonance pace, 6s in / 6s out
+  const PHASE_SEC = 6.0;
 
-  let stream = null, track = null, rafId = null;
-  let running = false;
-  let startTime = 0;
-  let waveHistory = [];
-  let peaks = [];
-  let ibis = [];
-  let lastPeakT = 0;
-  let smoothedBaseline = null;
-  let noSignalStreak = 0;
-  let rawAcBuffer = [];
-  let recentPeakAmp = [];
-  let lastAcceptedPeakVal = null;
-  let troughSinceLastPeak = null;
+  let stream = null, track = null, rafId = null, running = false, startTime = 0;
+  let waveHistory = [], peaks = [], ibis = [];
+  let lastPeakT = 0, smoothedBaseline = null, noSignalStreak = 0;
+  let rawAcBuffer = [], recentPeakAmp = [];
+  let lastAcceptedPeakVal = null, troughSinceLastPeak = null;
   let pacerTimer = null;
 
   function resizeCanvases() {
@@ -429,7 +186,6 @@
     });
   }
   window.addEventListener('resize', resizeCanvases);
-  window.addEventListener('orientationchange', () => setTimeout(resizeCanvases, 300));
 
   function setStatus(msg, cls) {
     statusLine.textContent = msg;
@@ -442,7 +198,7 @@
     let phase = 'inhale';
     function tick() {
       pacerOrb.classList.remove('inhale', 'exhale');
-      void pacerOrb.offsetWidth; // restart CSS transition
+      void pacerOrb.offsetWidth;
       pacerOrb.classList.add(phase);
       pacerLabel.textContent = phase === 'inhale' ? 'Breathe in' : 'Breathe out';
       phase = phase === 'inhale' ? 'exhale' : 'inhale';
@@ -457,28 +213,23 @@
   }
 
   async function start() {
-    results.style.display = 'none';
+    results.classList.remove('show');
     retryBtn.style.display = 'none';
     startBtn.style.display = 'none';
-    bpmDisplay.textContent = '—';
-    bpmLabel.textContent = 'BPM';
+    bpmDisplay.textContent = '—'; bpmLabel.textContent = 'BPM';
     waveHistory = []; peaks = []; ibis = [];
     lastPeakT = 0; smoothedBaseline = null; noSignalStreak = 0;
     rawAcBuffer = []; recentPeakAmp = [];
     lastAcceptedPeakVal = null; troughSinceLastPeak = null;
     coherenceScoreEl.textContent = '—';
-    hrvSubEl.textContent = 'Bigger, smoother waves = closer to resonance';
+    hrvSubEl.textContent = 'Bigger, smoother waves = closer to your resonance frequency';
     progressFill.style.width = '0%';
     resizeCanvases();
 
     setStatus('Requesting camera access…');
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'user' },
-          width: { ideal: 320 },
-          height: { ideal: 240 }
-        },
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 320 }, height: { ideal: 240 } },
         audio: false
       });
     } catch (err) {
@@ -491,8 +242,18 @@
     await video.play().catch(() => {});
     track = stream.getVideoTracks()[0];
 
-    railLabel.textContent = 'Thumb here — cover the front camera fully';
-    setStatus('Cover the front camera with your thumb, right next to the bright strip.');
+    let torchOn = false;
+    try {
+      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      if (caps.torch) {
+        await track.applyConstraints({ advanced: [{ torch: true }] });
+        torchOn = true;
+      }
+    } catch (e) {}
+
+    setStatus(torchOn
+      ? 'Flash on — cover the camera and flash fully with your fingertip.'
+      : 'Turn on your flashlight separately, then cover camera + flash with your fingertip.', torchOn ? '' : 'warn');
 
     startPacer();
     running = true;
@@ -519,38 +280,30 @@
       ).data;
 
       let rSum = 0, gSum = 0, bSum = 0, n = 0;
-      for (let i = 0; i < frame.length; i += 4) {
-        rSum += frame[i]; gSum += frame[i + 1]; bSum += frame[i + 2]; n++;
-      }
+      for (let i = 0; i < frame.length; i += 4) { rSum += frame[i]; gSum += frame[i + 1]; bSum += frame[i + 2]; n++; }
       const rAvg = rSum / n, gAvg = gSum / n, bAvg = bSum / n;
       const fingerLikely = rAvg > 60 && rAvg > gAvg * 1.15 && rAvg > bAvg * 1.15;
-
-      lightRail.classList.toggle('dimmed', !fingerLikely && elapsed > CALIBRATION_MS);
 
       if (elapsed > CALIBRATION_MS) {
         if (!fingerLikely) {
           noSignalStreak++;
-          if (noSignalStreak > 20) {
-            setStatus('No pulse detected — make sure your thumb fully covers the camera.', 'warn');
-          }
+          if (noSignalStreak > 20) setStatus('No pulse detected — press your fingertip fully over the camera and flash.', 'warn');
         } else {
           noSignalStreak = 0;
           processSample(now, rAvg);
           const pct = Math.min(100, (elapsed / SESSION_MS) * 100);
           progressFill.style.width = pct + '%';
-          setStatus(peaks.length >= 3 ? 'Reading your pulse — breathe naturally…' : 'Finding your pulse…', peaks.length >= 3 ? 'good' : '');
+          setStatus(peaks.length >= 3 ? 'Reading your pulse — hold still…' : 'Finding your pulse…', peaks.length >= 3 ? 'good' : '');
         }
       } else {
         setStatus('Settling…');
       }
-
       drawWave();
       drawHrvTrend();
     }
 
     if (elapsed >= SESSION_MS && ibis.length >= 6) { finish(); return; }
     if (elapsed >= SESSION_MS + 15000) { finish(true); return; }
-
     rafId = requestAnimationFrame(loop);
   }
 
@@ -588,9 +341,7 @@
       const sinceLast = lastPeakT === 0 ? Infinity : t - lastPeakT;
       if (sinceLast < MIN_IBI) return;
 
-      const avgRecentAmp = recentPeakAmp.length
-        ? recentPeakAmp.reduce((a, b) => a + b, 0) / recentPeakAmp.length
-        : curr;
+      const avgRecentAmp = recentPeakAmp.length ? recentPeakAmp.reduce((a, b) => a + b, 0) / recentPeakAmp.length : curr;
       if (recentPeakAmp.length >= 3 && curr < avgRecentAmp * 0.3) return;
 
       if (troughSinceLastPeak !== null) {
@@ -621,8 +372,6 @@
     const bpm = Math.round(60000 / ibi);
     bpmDisplay.textContent = bpm;
     bpmLabel.textContent = 'BPM · LIVE';
-    bpmChip.classList.add('beat');
-    setTimeout(() => bpmChip.classList.remove('beat'), 180);
     updateCoherence();
   }
 
@@ -631,16 +380,9 @@
     if (window.length < 5) { coherenceScoreEl.textContent = 'reading…'; return; }
     const bpmSeries = window.map(x => 60000 / x);
     const amp = Math.max(...bpmSeries) - Math.min(...bpmSeries);
-    if (amp > 14) {
-      coherenceScoreEl.textContent = 'high';
-      hrvSubEl.textContent = 'Big, rhythmic swings — this pace is working well';
-    } else if (amp > 6) {
-      coherenceScoreEl.textContent = 'building';
-      hrvSubEl.textContent = 'Getting there — stay steady and see if it grows';
-    } else {
-      coherenceScoreEl.textContent = 'low';
-      hrvSubEl.textContent = 'Flat so far — try a slightly different pace next round';
-    }
+    if (amp > 14) { coherenceScoreEl.textContent = 'high'; hrvSubEl.textContent = 'Big, rhythmic swings — this pace is working well for you'; }
+    else if (amp > 6) { coherenceScoreEl.textContent = 'building'; hrvSubEl.textContent = 'Getting there — stay steady and see if it grows'; }
+    else { coherenceScoreEl.textContent = 'low'; hrvSubEl.textContent = 'Flat so far — try a slightly different pace next round'; }
   }
 
   function drawHrvTrend() {
@@ -654,7 +396,6 @@
     const stepX = w / Math.max(window.length - 1, 1);
     const styles = getComputedStyle(document.documentElement);
     const calmColor = styles.getPropertyValue('--calm').trim() || '#4fd1c5';
-
     hrvCtx.beginPath();
     bpmSeries.forEach((bpm, i) => {
       const x = i * stepX;
@@ -716,15 +457,12 @@
     const avgIbi = cleanIbis.reduce((a, b) => a + b, 0) / cleanIbis.length;
     const avgBpm = Math.round(60000 / avgIbi);
     let sumSqDiff = 0;
-    for (let i = 1; i < cleanIbis.length; i++) {
-      const diff = cleanIbis[i] - cleanIbis[i - 1];
-      sumSqDiff += diff * diff;
-    }
+    for (let i = 1; i < cleanIbis.length; i++) { const diff = cleanIbis[i] - cleanIbis[i - 1]; sumSqDiff += diff * diff; }
     const rmssd = Math.round(Math.sqrt(sumSqDiff / (cleanIbis.length - 1)));
 
     avgBpmEl.textContent = avgBpm;
     rmssdEl.textContent = rmssd;
-    results.style.display = 'grid';
+    results.classList.add('show');
     bpmDisplay.textContent = avgBpm;
     bpmLabel.textContent = 'AVG';
 
