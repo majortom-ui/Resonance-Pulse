@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Pulse — camera HRV proof of concept</title>
+<title>Pulse — resonance frequency finder</title>
 <style>
   :root {
     --bg: #0a0d10; --bg-panel: #12161b; --bg-panel-raised: #181d24;
@@ -26,13 +26,31 @@
     padding: 26px 18px 40px;
   }
   .wrap { width: 100%; max-width: 460px; }
-  header { margin-bottom: 20px; }
+  header { margin-bottom: 16px; }
   .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 6px; }
-  h1 { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.05; margin: 0 0 8px; letter-spacing: -0.01em; }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.05; margin: 0 0 8px; letter-spacing: -0.01em; }
   h1 em { font-style: italic; color: var(--pulse); }
   .sub { color: var(--ink-dim); font-size: 14.5px; line-height: 1.5; max-width: 38ch; }
 
-  .stage { position: relative; background: var(--bg-panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px; margin-top: 20px; overflow: hidden; }
+  /* ---------- Mode selector ---------- */
+  .mode-row { display: flex; gap: 8px; margin-top: 14px; }
+  .mode-btn {
+    flex: 1; padding: 12px 10px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--bg-panel); color: var(--ink-dim); font-family: var(--font-body);
+    font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; line-height: 1.3;
+  }
+  .mode-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .mode-btn small { display: block; font-weight: 400; font-size: 10.5px; margin-top: 2px; opacity: 0.75; }
+
+  .stage { position: relative; background: var(--bg-panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px; margin-top: 16px; overflow: hidden; }
+
+  .phase-row {
+    display: none; justify-content: space-between; align-items: baseline;
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim);
+    letter-spacing: 0.06em; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
+  }
+  .phase-row.show { display: flex; }
+  .phase-row span#phaseLabel { color: var(--calm); font-weight: 600; }
 
   .pacer-zone { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
   .pacer-orb {
@@ -59,6 +77,8 @@
 
   .progress-track { height: 3px; background: var(--line); border-radius: 2px; margin-top: 12px; overflow: hidden; }
   .progress-fill { height: 100%; width: 0%; background: var(--pulse); transition: width 200ms linear; }
+  .progress-track.overall { margin-top: 6px; }
+  .progress-fill.overall { background: var(--calm); }
 
   button.primary { width: 100%; margin-top: 18px; padding: 15px; border-radius: 12px; border: none; background: var(--ink); color: var(--bg); font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; }
   button.primary:active { opacity: 0.8; }
@@ -77,6 +97,28 @@
   .result-card .val { font-family: var(--font-display); font-size: 30px; font-weight: 600; }
   .result-card .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); letter-spacing: 0.06em; margin-top: 2px; }
 
+  /* ---------- Calibration results ---------- */
+  .cal-results { display: none; margin-top: 4px; }
+  .cal-results.show { display: block; }
+  .cal-headline {
+    text-align: center; background: var(--bg-panel-raised); border: 1px solid var(--calm);
+    border-radius: 14px; padding: 16px; margin-bottom: 14px;
+  }
+  .cal-headline .big { font-family: var(--font-display); font-size: 36px; font-weight: 600; color: var(--calm); line-height: 1; }
+  .cal-headline .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); letter-spacing: 0.08em; margin-top: 6px; }
+  .cal-list { display: flex; flex-direction: column; gap: 6px; }
+  .cal-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg-panel-raised); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 14px;
+  }
+  .cal-row.best { border-color: var(--calm); background: rgba(79, 209, 197, 0.08); }
+  .cal-row .pace { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+  .cal-row .metrics { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); text-align: right; }
+  .cal-row .metrics strong { color: var(--ink); font-weight: 600; }
+  .cal-row.best .metrics strong { color: var(--calm); }
+  .cal-row .failed { font-family: var(--font-mono); font-size: 11px; color: var(--warn); }
+
   .hint { font-size: 12.5px; color: var(--ink-dim); line-height: 1.55; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
   .hint strong { color: var(--ink); font-weight: 600; }
 
@@ -86,8 +128,6 @@
 
   .disclaimer { text-align: center; font-size: 11px; color: var(--ink-dim); margin-top: 26px; line-height: 1.5; opacity: 0.75; }
 
-  /* Phone landscape: two-column layout so the whole screen stays visible
-     without scrolling while a fingertip covers the rear camera + flash. */
   @media (orientation: landscape) {
     body { padding: 10px 18px calc(10px + env(safe-area-inset-bottom)); align-items: flex-start; }
     .wrap { max-width: 100%; }
@@ -95,14 +135,17 @@
     .eyebrow { display: none; }
     h1 { font-size: 17px; line-height: 1.1; }
     .sub { display: none; }
+    .mode-row { margin-top: 6px; }
+    .mode-btn { padding: 8px; font-size: 11.5px; }
+    .mode-btn small { font-size: 9px; }
 
     .stage {
       display: flex; flex-wrap: wrap; align-items: flex-start;
-      gap: 12px; padding: 10px; margin-top: 4px;
+      gap: 12px; padding: 10px; margin-top: 6px;
     }
+    .phase-row { width: 100%; order: 0; margin-bottom: 6px; padding-bottom: 6px; font-size: 10px; }
     .pacer-zone {
-      flex: 0 0 170px;
-      padding: 0;
+      flex: 0 0 170px; padding: 0; order: 1;
     }
     .pacer-orb { width: 76px; height: 76px; }
     .ring-bpm { font-size: 18px; }
@@ -110,7 +153,7 @@
     .pacer-label { font-size: 14px; margin-top: 6px; }
     .pacer-sub { font-size: 8.5px; margin-top: 1px; }
 
-    .controls-col { flex: 1; min-width: 220px; }
+    .controls-col { flex: 1; min-width: 220px; order: 2; }
     canvas#wave { height: 32px; margin-top: 0; }
     .hrv-panel { margin-top: 6px; padding: 8px 10px 5px; }
     .hrv-panel-label { font-size: 9px; }
@@ -125,6 +168,13 @@
     .result-card .val { font-size: 20px; }
     .result-card .lbl { font-size: 8px; }
 
+    .cal-results { width: 100%; order: 3; }
+    .cal-headline { padding: 10px; margin-bottom: 8px; }
+    .cal-headline .big { font-size: 24px; }
+    .cal-row { padding: 7px 10px; }
+    .cal-row .pace { font-size: 13px; }
+    .cal-row .metrics { font-size: 10px; }
+
     .hint { display: none; }
     .disclaimer { display: none; }
   }
@@ -133,12 +183,22 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">PROOF OF CONCEPT · 01 · REAR CAMERA</div>
-    <h1>Read your <em>pulse</em><br>from a fingertip.</h1>
-    <div class="sub">Cover the rear camera and flash with a fingertip. Breathe along with the orb — watch your HRV wave respond.</div>
+    <div class="eyebrow">RESONANCE PULSE · REAR CAMERA</div>
+    <h1>Find your <em>resonance</em><br>frequency.</h1>
+    <div class="sub" id="modeSub">Cover the rear camera and flash with a fingertip.</div>
   </header>
 
+  <div class="mode-row" id="modeRow">
+    <button class="mode-btn active" id="modeSingleBtn">Quick pulse read<small>45 seconds, one pace</small></button>
+    <button class="mode-btn" id="modeCalBtn">Find resonance frequency<small>~8 min, 5 paces compared</small></button>
+  </div>
+
   <div class="stage">
+    <div class="phase-row" id="phaseRow">
+      <span id="phaseLabel">Phase 1 of 5</span>
+      <span id="phaseOverall">0:00 / 8:00</span>
+    </div>
+
     <div class="pacer-zone">
       <div class="pacer-orb" id="pacerOrb">
         <div class="pacer-inner">
@@ -163,6 +223,7 @@
       </div>
 
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-track overall" id="overallTrack" style="display:none"><div class="progress-fill overall" id="overallFill"></div></div>
       <div class="status-line" id="statusLine">Tap start, then cover the rear camera and flash with your fingertip.</div>
 
       <button class="primary" id="startBtn">Start reading</button>
@@ -173,6 +234,14 @@
           <div class="result-card"><div class="val" id="avgBpm">—</div><div class="lbl">AVG BPM</div></div>
           <div class="result-card"><div class="val" id="rmssd">—</div><div class="lbl">RMSSD · HRV (MS)</div></div>
         </div>
+      </div>
+
+      <div class="cal-results" id="calResults">
+        <div class="cal-headline">
+          <div class="big" id="calBestPace">—</div>
+          <div class="lbl">YOUR RESONANCE FREQUENCY</div>
+        </div>
+        <div class="cal-list" id="calList"></div>
       </div>
     </div>
 
@@ -189,6 +258,16 @@
 
 <script>
 (function() {
+  const modeRow = document.getElementById('modeRow');
+  const modeSingleBtn = document.getElementById('modeSingleBtn');
+  const modeCalBtn = document.getElementById('modeCalBtn');
+  const modeSub = document.getElementById('modeSub');
+  const phaseRow = document.getElementById('phaseRow');
+  const phaseLabel = document.getElementById('phaseLabel');
+  const phaseOverall = document.getElementById('phaseOverall');
+  const overallTrack = document.getElementById('overallTrack');
+  const overallFill = document.getElementById('overallFill');
+
   const startBtn = document.getElementById('startBtn');
   const retryBtn = document.getElementById('retryBtn');
   const statusLine = document.getElementById('statusLine');
@@ -201,6 +280,9 @@
   const results = document.getElementById('results');
   const avgBpmEl = document.getElementById('avgBpm');
   const rmssdEl = document.getElementById('rmssd');
+  const calResults = document.getElementById('calResults');
+  const calBestPace = document.getElementById('calBestPace');
+  const calList = document.getElementById('calList');
   const video = document.getElementById('video');
   const rawcanvas = document.getElementById('rawcanvas');
   const rawCtx = rawcanvas.getContext('2d', { willReadFrequently: true });
@@ -211,12 +293,16 @@
   const coherenceScoreEl = document.getElementById('coherenceScore');
   const hrvSubEl = document.getElementById('hrvSub');
 
-  const SESSION_MS = 45000;
-  const CALIBRATION_MS = 3000;
+  const SESSION_MS = 45000;          // quick single-read duration
+  const CAL_PHASE_MS = 90000;        // each calibration phase
+  const CALIBRATION_SETTLE_MS = 3000; // ignore first few seconds of every phase while grip/signal settles
   const MIN_IBI = 400;
   const MAX_IBI = 1500;
   const SMOOTH_TAPS = 3;
-  const PHASE_SEC = 6.0;
+  const CAL_PACES_SEC = [5.0, 6.0, 7.0, 8.0, 9.0];
+
+  let mode = 'single'; // 'single' | 'calibration'
+  let PHASE_SEC = 6.0;
 
   let stream = null, track = null, rafId = null, running = false, startTime = 0;
   let waveHistory = [], peaks = [], ibis = [];
@@ -224,6 +310,10 @@
   let rawAcBuffer = [], recentPeakAmp = [];
   let lastAcceptedPeakVal = null, troughSinceLastPeak = null;
   let pacerTimer = null;
+
+  let calPhaseIndex = 0;
+  let calSessionResults = [];
+  let calSessionStart = 0;
 
   function resizeCanvases() {
     [waveCanvas, hrvCanvas].forEach(c => {
@@ -239,6 +329,47 @@
     statusLine.className = 'status-line' + (cls ? ' ' + cls : '');
   }
 
+  function fmtMinSec(ms) {
+    const totalSec = Math.max(0, Math.round(ms / 1000));
+    const m = Math.floor(totalSec / 60), s = totalSec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+
+  // ---------- Mode selector ----------
+  modeSingleBtn.addEventListener('click', () => {
+    if (running) return;
+    mode = 'single';
+    modeSingleBtn.classList.add('active');
+    modeCalBtn.classList.remove('active');
+    modeSub.textContent = 'Cover the rear camera and flash with a fingertip.';
+    startBtn.textContent = 'Start reading';
+    resetIdleUI();
+  });
+  modeCalBtn.addEventListener('click', () => {
+    if (running) return;
+    mode = 'calibration';
+    modeCalBtn.classList.add('active');
+    modeSingleBtn.classList.remove('active');
+    modeSub.textContent = 'Cycles through 5 breathing paces (~90 sec each) and finds which one produces the biggest HRV wave.';
+    startBtn.textContent = 'Start calibration';
+    resetIdleUI();
+  });
+
+  function resetIdleUI() {
+    results.classList.remove('show');
+    calResults.classList.remove('show');
+    phaseRow.classList.remove('show');
+    overallTrack.style.display = 'none';
+    startBtn.style.display = 'block';
+    retryBtn.style.display = 'none';
+    progressFill.style.width = '0%';
+    bpmDisplay.textContent = '—'; bpmLabel.textContent = 'BPM';
+    setStatus(mode === 'calibration'
+      ? 'Tap start, then cover the rear camera and flash with your fingertip.'
+      : 'Tap start, then cover the rear camera and flash with your fingertip.');
+  }
+
+  // ---------- Breathing pacer ----------
   function startPacer() {
     document.documentElement.style.setProperty('--phase-ms', PHASE_SEC + 's');
     pacerSub.textContent = PHASE_SEC.toFixed(1) + 's IN · ' + PHASE_SEC.toFixed(1) + 's OUT';
@@ -259,11 +390,8 @@
     pacerLabel.textContent = 'Get ready';
   }
 
-  async function start() {
-    results.classList.remove('show');
-    retryBtn.style.display = 'none';
-    startBtn.style.display = 'none';
-    bpmDisplay.textContent = '—'; bpmLabel.textContent = 'BPM';
+  // ---------- Per-attempt detection state reset (camera stays alive) ----------
+  function resetDetectionState() {
     waveHistory = []; peaks = []; ibis = [];
     lastPeakT = 0; smoothedBaseline = null; noSignalStreak = 0;
     rawAcBuffer = []; recentPeakAmp = [];
@@ -271,8 +399,11 @@
     coherenceScoreEl.textContent = '—';
     hrvSubEl.textContent = 'Bigger, smoother waves = closer to your resonance frequency';
     progressFill.style.width = '0%';
-    resizeCanvases();
+    bpmDisplay.textContent = '—'; bpmLabel.textContent = 'BPM';
+  }
 
+  // ---------- Camera acquisition (once per session) ----------
+  async function acquireCamera() {
     setStatus('Requesting camera access…');
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -282,9 +413,8 @@
     } catch (err) {
       setStatus('Camera access was denied. Allow camera permission and try again.', 'warn');
       startBtn.style.display = 'block';
-      return;
+      return false;
     }
-
     video.srcObject = stream;
     await video.play().catch(() => {});
     track = stream.getVideoTracks()[0];
@@ -301,57 +431,204 @@
     setStatus(torchOn
       ? 'Flash on — cover the camera and flash fully with your fingertip.'
       : 'Turn on your flashlight separately, then cover camera + flash with your fingertip.', torchOn ? '' : 'warn');
+    return true;
+  }
+
+  function releaseCamera() {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = null; track = null;
+  }
+
+  // ---------- Single quick read ----------
+  async function startSingle() {
+    resetIdleUI();
+    results.classList.remove('show');
+    retryBtn.style.display = 'none';
+    startBtn.style.display = 'none';
+    resetDetectionState();
+    resizeCanvases();
+    PHASE_SEC = 6.0;
+
+    const ok = await acquireCamera();
+    if (!ok) return;
 
     startPacer();
     running = true;
     startTime = performance.now();
-    rafId = requestAnimationFrame(loop);
+    rafId = requestAnimationFrame(loopSingle);
+  }
+
+  function loopSingle(now) {
+    if (!running) return;
+    const elapsed = now - startTime;
+    sampleFrame(elapsed, CALIBRATION_SETTLE_MS, () => {
+      const pct = Math.min(100, (elapsed / SESSION_MS) * 100);
+      progressFill.style.width = pct + '%';
+    });
+
+    if (elapsed >= SESSION_MS && ibis.length >= 6) { finishSingle(); return; }
+    if (elapsed >= SESSION_MS + 15000) { finishSingle(true); return; }
+    rafId = requestAnimationFrame(loopSingle);
+  }
+
+  function finishSingle(forcedTimeout) {
+    stop();
+    releaseCamera();
+    startBtn.style.display = 'none';
+    retryBtn.style.display = 'block';
+    progressFill.style.width = '100%';
+
+    const stats = computeCleanStats(ibis);
+    if (!stats) {
+      setStatus('Signal was too noisy to get a clean read. Try again with steadier pressure.', 'warn');
+      bpmDisplay.textContent = '—'; bpmLabel.textContent = 'ENDED';
+      return;
+    }
+    avgBpmEl.textContent = stats.avgBpm;
+    rmssdEl.textContent = stats.rmssd;
+    results.classList.add('show');
+    bpmDisplay.textContent = stats.avgBpm;
+    bpmLabel.textContent = 'AVG';
+
+    let msg = forcedTimeout ? 'Read finished early — signal was intermittent.' : 'Read complete.';
+    if (stats.rejectedCount > 0) msg += ` (${stats.rejectedCount} irregular beat${stats.rejectedCount > 1 ? 's' : ''} filtered.)`;
+    setStatus(msg, 'good');
+  }
+
+  // ---------- Calibration (stepped pace) ----------
+  async function startCalibration() {
+    resetIdleUI();
+    startBtn.style.display = 'none';
+    calResults.classList.remove('show');
+    phaseRow.classList.add('show');
+    overallTrack.style.display = 'block';
+    calSessionResults = [];
+    calPhaseIndex = 0;
+    calSessionStart = performance.now();
+
+    const ok = await acquireCamera();
+    if (!ok) { phaseRow.classList.remove('show'); overallTrack.style.display = 'none'; return; }
+
+    runCalPhase(0);
+  }
+
+  function runCalPhase(index) {
+    if (index >= CAL_PACES_SEC.length) { finishCalibration(); return; }
+    calPhaseIndex = index;
+    PHASE_SEC = CAL_PACES_SEC[index];
+    resetDetectionState();
+
+    phaseLabel.textContent = 'Phase ' + (index + 1) + ' of ' + CAL_PACES_SEC.length + ' · ' + PHASE_SEC.toFixed(1) + 's pace';
+    setStatus('Settling into this pace…');
+
+    stopPacer();
+    startPacer();
+    running = true;
+    startTime = performance.now();
+    rafId = requestAnimationFrame(loopCal);
+  }
+
+  function loopCal(now) {
+    if (!running) return;
+    const elapsed = now - startTime;
+    const totalElapsed = now - calSessionStart;
+    const totalDuration = CAL_PACES_SEC.length * CAL_PHASE_MS;
+
+    sampleFrame(elapsed, CALIBRATION_SETTLE_MS, () => {
+      const pct = Math.min(100, (elapsed / CAL_PHASE_MS) * 100);
+      progressFill.style.width = pct + '%';
+      const overallPct = Math.min(100, (totalElapsed / totalDuration) * 100);
+      overallFill.style.width = overallPct + '%';
+      phaseOverall.textContent = fmtMinSec(totalElapsed) + ' / ' + fmtMinSec(totalDuration);
+    });
+
+    if (elapsed >= CAL_PHASE_MS) {
+      const stats = computeCleanStats(ibis);
+      calSessionResults.push({
+        sec: PHASE_SEC,
+        avgBpm: stats ? stats.avgBpm : null,
+        rmssd: stats ? stats.rmssd : null,
+        rejectedCount: stats ? stats.rejectedCount : 0,
+        beatCount: ibis.length
+      });
+      runCalPhase(calPhaseIndex + 1);
+      return;
+    }
+    rafId = requestAnimationFrame(loopCal);
+  }
+
+  function finishCalibration() {
+    stop();
+    releaseCamera();
+    phaseRow.classList.remove('show');
+    overallTrack.style.display = 'none';
+    startBtn.style.display = 'none';
+    retryBtn.style.display = 'block';
+    retryBtn.textContent = 'Run again';
+
+    const valid = calSessionResults.filter(r => r.rmssd !== null);
+    calList.innerHTML = '';
+
+    if (valid.length === 0) {
+      setStatus('None of the phases produced a clean enough signal. Try again with steadier pressure.', 'warn');
+      calResults.classList.add('show');
+      calBestPace.textContent = '—';
+      return;
+    }
+
+    const best = valid.reduce((a, b) => (b.rmssd > a.rmssd ? b : a));
+    calBestPace.textContent = best.sec.toFixed(1) + 's';
+
+    calSessionResults.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'cal-row' + (r === best ? ' best' : '');
+      if (r.rmssd === null) {
+        row.innerHTML = `<span class="pace">${r.sec.toFixed(1)}s IN/OUT</span><span class="failed">too noisy</span>`;
+      } else {
+        row.innerHTML = `<span class="pace">${r.sec.toFixed(1)}s IN/OUT</span><span class="metrics">${r.avgBpm} bpm · <strong>${r.rmssd}ms</strong></span>`;
+      }
+      calList.appendChild(row);
+    });
+
+    calResults.classList.add('show');
+    setStatus('Calibration complete.', 'good');
+  }
+
+  // ---------- Shared camera-frame sampling ----------
+  function sampleFrame(elapsed, settleMs, onSample) {
+    if (video.readyState < 2) return;
+    rawCtx.drawImage(video, 0, 0, rawcanvas.width, rawcanvas.height);
+    const frame = rawCtx.getImageData(
+      rawcanvas.width * 0.35, rawcanvas.height * 0.35,
+      rawcanvas.width * 0.3, rawcanvas.height * 0.3
+    ).data;
+
+    let rSum = 0, gSum = 0, bSum = 0, n = 0;
+    for (let i = 0; i < frame.length; i += 4) { rSum += frame[i]; gSum += frame[i + 1]; bSum += frame[i + 2]; n++; }
+    const rAvg = rSum / n, gAvg = gSum / n, bAvg = bSum / n;
+    const fingerLikely = rAvg > 60 && rAvg > gAvg * 1.15 && rAvg > bAvg * 1.15;
+
+    if (elapsed > settleMs) {
+      if (!fingerLikely) {
+        noSignalStreak++;
+        if (noSignalStreak > 20) setStatus('No pulse detected — press your fingertip fully over the camera and flash.', 'warn');
+      } else {
+        noSignalStreak = 0;
+        processSample(performance.now(), rAvg);
+        setStatus(peaks.length >= 3 ? 'Reading your pulse — breathe naturally…' : 'Finding your pulse…', peaks.length >= 3 ? 'good' : '');
+        if (onSample) onSample();
+      }
+    } else {
+      setStatus('Settling…');
+    }
+    drawWave();
+    drawHrvTrend();
   }
 
   function stop() {
     running = false;
     if (rafId) cancelAnimationFrame(rafId);
-    if (stream) stream.getTracks().forEach(t => t.stop());
     stopPacer();
-  }
-
-  function loop(now) {
-    if (!running) return;
-    const elapsed = now - startTime;
-
-    if (video.readyState >= 2) {
-      rawCtx.drawImage(video, 0, 0, rawcanvas.width, rawcanvas.height);
-      const frame = rawCtx.getImageData(
-        rawcanvas.width * 0.35, rawcanvas.height * 0.35,
-        rawcanvas.width * 0.3, rawcanvas.height * 0.3
-      ).data;
-
-      let rSum = 0, gSum = 0, bSum = 0, n = 0;
-      for (let i = 0; i < frame.length; i += 4) { rSum += frame[i]; gSum += frame[i + 1]; bSum += frame[i + 2]; n++; }
-      const rAvg = rSum / n, gAvg = gSum / n, bAvg = bSum / n;
-      const fingerLikely = rAvg > 60 && rAvg > gAvg * 1.15 && rAvg > bAvg * 1.15;
-
-      if (elapsed > CALIBRATION_MS) {
-        if (!fingerLikely) {
-          noSignalStreak++;
-          if (noSignalStreak > 20) setStatus('No pulse detected — press your fingertip fully over the camera and flash.', 'warn');
-        } else {
-          noSignalStreak = 0;
-          processSample(now, rAvg);
-          const pct = Math.min(100, (elapsed / SESSION_MS) * 100);
-          progressFill.style.width = pct + '%';
-          setStatus(peaks.length >= 3 ? 'Reading your pulse — hold still…' : 'Finding your pulse…', peaks.length >= 3 ? 'good' : '');
-        }
-      } else {
-        setStatus('Settling…');
-      }
-      drawWave();
-      drawHrvTrend();
-    }
-
-    if (elapsed >= SESSION_MS && ibis.length >= 6) { finish(); return; }
-    if (elapsed >= SESSION_MS + 15000) { finish(true); return; }
-    rafId = requestAnimationFrame(loop);
   }
 
   function processSample(t, v) {
@@ -432,6 +709,32 @@
     else { coherenceScoreEl.textContent = 'low'; hrvSubEl.textContent = 'Flat so far — try a slightly different pace next round'; }
   }
 
+  // ---------- Artifact correction + stats (shared by single read and each calibration phase) ----------
+  function computeCleanStats(ibisArr) {
+    if (ibisArr.length < 6) return null;
+
+    const cleanIbis = [];
+    let reference = ibisArr[0];
+    cleanIbis.push(ibisArr[0]);
+    for (let i = 1; i < ibisArr.length; i++) {
+      const pctChange = Math.abs(ibisArr[i] - reference) / reference;
+      if (pctChange <= 0.2) {
+        cleanIbis.push(ibisArr[i]);
+        reference = ibisArr[i];
+      }
+    }
+    const rejectedCount = ibisArr.length - cleanIbis.length;
+    if (cleanIbis.length < 6) return null;
+
+    const avgIbi = cleanIbis.reduce((a, b) => a + b, 0) / cleanIbis.length;
+    const avgBpm = Math.round(60000 / avgIbi);
+    let sumSqDiff = 0;
+    for (let i = 1; i < cleanIbis.length; i++) { const diff = cleanIbis[i] - cleanIbis[i - 1]; sumSqDiff += diff * diff; }
+    const rmssd = Math.round(Math.sqrt(sumSqDiff / (cleanIbis.length - 1)));
+
+    return { avgBpm, rmssd, rejectedCount };
+  }
+
   function drawHrvTrend() {
     const w = hrvCanvas.width, h = hrvCanvas.height;
     hrvCtx.clearRect(0, 0, w, h);
@@ -479,63 +782,18 @@
     waveCtx.stroke();
   }
 
-  function finish(forcedTimeout) {
-    stop();
-    startBtn.style.display = 'none';
-    retryBtn.style.display = 'block';
-    progressFill.style.width = '100%';
+  startBtn.addEventListener('click', () => {
+    modeRow.style.display = 'none';
+    if (mode === 'calibration') startCalibration(); else startSingle();
+  });
+  retryBtn.addEventListener('click', () => {
+    releaseCamera();
+    modeRow.style.display = 'flex';
+    resetIdleUI();
+    startBtn.style.display = 'block';
+    retryBtn.style.display = 'none';
+  });
 
-    if (ibis.length < 6) {
-      setStatus('Signal was too noisy to get a clean read. Try again with steadier pressure.', 'warn');
-      bpmDisplay.textContent = '—'; bpmLabel.textContent = 'ENDED';
-      return;
-    }
-
-    // Artifact correction: compare each interval to the one immediately
-    // before it (not a single global reference), rejecting any beat that
-    // jumps too far from its own neighbor. This is closer to how real HRV
-    // software (Kubios-style NN-interval correction) handles noisy raw
-    // data — a single bad early stretch can't throw off the whole session
-    // the way comparing everything to one global median could.
-    const cleanIbis = [];
-    let reference = ibis[0];
-    cleanIbis.push(ibis[0]);
-    for (let i = 1; i < ibis.length; i++) {
-      const pctChange = Math.abs(ibis[i] - reference) / reference;
-      if (pctChange <= 0.2) {
-        cleanIbis.push(ibis[i]);
-        reference = ibis[i];
-      }
-      // rejected beats don't update the reference, so a run of bad beats
-      // can't drag the comparison point along with them
-    }
-    const rejectedCount = ibis.length - cleanIbis.length;
-
-    if (cleanIbis.length < 6) {
-      setStatus('Too many irregular beats detected. Try again with steadier pressure.', 'warn');
-      bpmDisplay.textContent = '—'; bpmLabel.textContent = 'ENDED';
-      return;
-    }
-
-    const avgIbi = cleanIbis.reduce((a, b) => a + b, 0) / cleanIbis.length;
-    const avgBpm = Math.round(60000 / avgIbi);
-    let sumSqDiff = 0;
-    for (let i = 1; i < cleanIbis.length; i++) { const diff = cleanIbis[i] - cleanIbis[i - 1]; sumSqDiff += diff * diff; }
-    const rmssd = Math.round(Math.sqrt(sumSqDiff / (cleanIbis.length - 1)));
-
-    avgBpmEl.textContent = avgBpm;
-    rmssdEl.textContent = rmssd;
-    results.classList.add('show');
-    bpmDisplay.textContent = avgBpm;
-    bpmLabel.textContent = 'AVG';
-
-    let msg = forcedTimeout ? 'Read finished early — signal was intermittent.' : 'Read complete.';
-    if (rejectedCount > 0) msg += ` (${rejectedCount} irregular beat${rejectedCount > 1 ? 's' : ''} filtered.)`;
-    setStatus(msg, 'good');
-  }
-
-  startBtn.addEventListener('click', start);
-  retryBtn.addEventListener('click', start);
   resizeCanvases();
 })();
 </script>
