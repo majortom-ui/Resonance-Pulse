@@ -53,20 +53,32 @@
   .phase-row span#phaseLabel { color: var(--calm); font-weight: 600; }
 
   .pacer-zone { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
-  .pacer-orb {
-    width: 130px; height: 130px; border-radius: 50%;
-    background: radial-gradient(circle at 40% 35%, #6fe3d4, var(--calm));
-    box-shadow: 0 0 50px -8px var(--calm);
-    transform: scale(0.7);
+
+  .lungs-wrap { width: 150px; text-align: center; }
+  .lungs-svg { width: 100%; height: 110px; overflow: visible; display: block; }
+  #lungsInner {
+    transform-origin: 110px 70px;
+    transform: scale(0.82);
     transition: transform 6s ease-in-out;
-    display: flex; align-items: center; justify-content: center;
   }
-  .pacer-orb.inhale { transform: scale(1.25); transition-duration: var(--phase-ms, 6s); }
-  .pacer-orb.exhale { transform: scale(0.7); transition-duration: var(--phase-ms, 6s); }
+  .lungs-orb.inhale #lungsInner, #lungsOrb.inhale #lungsInner { transform: scale(1.0); transition-duration: var(--phase-ms, 6s); }
+  .lungs-orb.exhale #lungsInner, #lungsOrb.exhale #lungsInner { transform: scale(0.82); transition-duration: var(--phase-ms, 6s); }
+
+  .count-display {
+    font-family: var(--font-display); font-size: 46px; font-weight: 600;
+    line-height: 1; color: var(--ink); margin-top: 6px;
+  }
   .pacer-inner { text-align: center; }
   .ring-bpm { font-family: var(--font-display); font-size: 30px; font-weight: 600; line-height: 1; color: #06231f; }
   .ring-bpm-label { font-family: var(--font-mono); font-size: 9px; color: #0a2e29; letter-spacing: 0.08em; margin-top: 2px; }
-  .pacer-label { margin-top: 16px; font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+  .bpm-chip {
+    display: inline-flex; align-items: baseline; gap: 5px;
+    background: var(--bg-panel-raised); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 12px; margin-top: 10px;
+  }
+  .bpm-chip .ring-bpm { font-size: 15px; color: var(--ink); }
+  .bpm-chip .ring-bpm-label { color: var(--ink-dim); }
+  .pacer-label { margin-top: 8px; font-family: var(--font-display); font-size: 18px; font-weight: 600; }
   .pacer-sub { margin-top: 2px; font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); letter-spacing: 0.08em; }
 
   canvas#wave { width: 100%; height: 56px; display: block; margin-top: 16px; border-radius: 8px; }
@@ -145,13 +157,16 @@
     }
     .phase-row { width: 100%; order: 0; margin-bottom: 6px; padding-bottom: 6px; font-size: 10px; }
     .pacer-zone {
-      flex: 0 0 170px; padding: 0; order: 1;
+      flex: 0 0 150px; padding: 0; order: 1;
     }
-    .pacer-orb { width: 76px; height: 76px; }
-    .ring-bpm { font-size: 18px; }
-    .ring-bpm-label { font-size: 8px; }
-    .pacer-label { font-size: 14px; margin-top: 6px; }
-    .pacer-sub { font-size: 8.5px; margin-top: 1px; }
+    .lungs-wrap { width: 90px; }
+    .lungs-svg { height: 66px; }
+    .count-display { font-size: 28px; margin-top: 2px; }
+    .bpm-chip { padding: 2px 8px; margin-top: 5px; }
+    .bpm-chip .ring-bpm { font-size: 11px; }
+    .bpm-chip .ring-bpm-label { font-size: 7px; }
+    .pacer-label { font-size: 12px; margin-top: 4px; }
+    .pacer-sub { font-size: 8px; margin-top: 1px; }
 
     .controls-col { flex: 1; min-width: 220px; order: 2; }
     canvas#wave { height: 32px; margin-top: 0; }
@@ -200,11 +215,24 @@
     </div>
 
     <div class="pacer-zone">
-      <div class="pacer-orb" id="pacerOrb">
-        <div class="pacer-inner">
-          <div class="ring-bpm" id="bpmDisplay">—</div>
-          <div class="ring-bpm-label" id="bpmLabel">BPM</div>
-        </div>
+      <div class="lungs-wrap">
+        <svg class="lungs-svg" id="lungsOrb" viewBox="0 0 220 190">
+          <line x1="110" y1="8" x2="110" y2="48" stroke="var(--ink-dim)" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+          <path d="M110 40 L82 62 M110 40 L138 62" stroke="var(--ink-dim)" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.4"/>
+          <g opacity="0.22">
+            <ellipse cx="68" cy="120" rx="58" ry="78" fill="none" stroke="var(--ink-dim)" stroke-width="2" stroke-dasharray="5 6"/>
+            <ellipse cx="152" cy="120" rx="58" ry="78" fill="none" stroke="var(--ink-dim)" stroke-width="2" stroke-dasharray="5 6"/>
+          </g>
+          <g id="lungsInner">
+            <ellipse cx="68" cy="120" rx="44" ry="60" fill="var(--calm)"/>
+            <ellipse cx="152" cy="120" rx="44" ry="60" fill="var(--calm)"/>
+          </g>
+        </svg>
+        <div class="count-display" id="countDisplay">—</div>
+      </div>
+      <div class="bpm-chip">
+        <span class="ring-bpm" id="bpmDisplay">—</span>
+        <span class="ring-bpm-label" id="bpmLabel">BPM</span>
       </div>
       <div class="pacer-label" id="pacerLabel">Get ready</div>
       <div class="pacer-sub" id="pacerSub">6.0s IN · 6.0s OUT</div>
@@ -271,9 +299,10 @@
   const startBtn = document.getElementById('startBtn');
   const retryBtn = document.getElementById('retryBtn');
   const statusLine = document.getElementById('statusLine');
-  const pacerOrb = document.getElementById('pacerOrb');
+  const pacerOrb = document.getElementById('lungsOrb');
   const pacerLabel = document.getElementById('pacerLabel');
   const pacerSub = document.getElementById('pacerSub');
+  const countDisplay = document.getElementById('countDisplay');
   const bpmDisplay = document.getElementById('bpmDisplay');
   const bpmLabel = document.getElementById('bpmLabel');
   const progressFill = document.getElementById('progressFill');
@@ -310,6 +339,7 @@
   let rawAcBuffer = [], recentPeakAmp = [];
   let lastAcceptedPeakVal = null, troughSinceLastPeak = null;
   let pacerTimer = null;
+  let countTimer = null;
 
   let calPhaseIndex = 0;
   let calSessionResults = [];
@@ -369,16 +399,35 @@
       : 'Tap start, then cover the rear camera and flash with your fingertip.');
   }
 
-  // ---------- Breathing pacer ----------
+  // ---------- Breathing pacer: lung animation + a precise 1-to-N countdown
+  // synced to whichever pace is active, so nobody has to count in their
+  // head. Numbers count UP while inhaling (lungs filling) and DOWN while
+  // exhaling (lungs emptying) — matches the visual directly.
+  function startCountdown(direction) {
+    if (countTimer) clearInterval(countTimer);
+    const totalSec = Math.max(1, Math.round(PHASE_SEC));
+    let n = direction === 'up' ? 1 : totalSec;
+    countDisplay.textContent = n;
+    countTimer = setInterval(() => {
+      n = direction === 'up' ? n + 1 : n - 1;
+      if ((direction === 'up' && n > totalSec) || (direction === 'down' && n < 1)) {
+        clearInterval(countTimer);
+        return;
+      }
+      countDisplay.textContent = n;
+    }, 1000);
+  }
+
   function startPacer() {
     document.documentElement.style.setProperty('--phase-ms', PHASE_SEC + 's');
     pacerSub.textContent = PHASE_SEC.toFixed(1) + 's IN · ' + PHASE_SEC.toFixed(1) + 's OUT';
     let phase = 'inhale';
     function tick() {
       pacerOrb.classList.remove('inhale', 'exhale');
-      void pacerOrb.offsetWidth;
+      void pacerOrb.getBoundingClientRect();
       pacerOrb.classList.add(phase);
       pacerLabel.textContent = phase === 'inhale' ? 'Breathe in' : 'Breathe out';
+      startCountdown(phase === 'inhale' ? 'up' : 'down');
       phase = phase === 'inhale' ? 'exhale' : 'inhale';
     }
     tick();
@@ -386,8 +435,10 @@
   }
   function stopPacer() {
     if (pacerTimer) clearInterval(pacerTimer);
+    if (countTimer) clearInterval(countTimer);
     pacerOrb.classList.remove('inhale', 'exhale');
     pacerLabel.textContent = 'Get ready';
+    countDisplay.textContent = '—';
   }
 
   // ---------- Per-attempt detection state reset (camera stays alive) ----------
