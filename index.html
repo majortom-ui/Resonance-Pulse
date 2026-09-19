@@ -80,9 +80,47 @@
   .hint { font-size: 12.5px; color: var(--ink-dim); line-height: 1.55; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
   .hint strong { color: var(--ink); font-weight: 600; }
 
+  .controls-col { display: flex; flex-direction: column; width: 100%; }
+
   video, .rawcanvas { display: none; }
 
   .disclaimer { text-align: center; font-size: 11px; color: var(--ink-dim); margin-top: 26px; line-height: 1.5; opacity: 0.75; }
+
+  /* Phone landscape: two-column layout so the whole screen stays visible
+     without scrolling while a fingertip covers the rear camera + flash. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    body { padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); align-items: flex-start; }
+    .wrap { max-width: 100%; }
+    header { margin-bottom: 10px; }
+    h1 { font-size: 22px; }
+    .sub { display: none; }
+    .eyebrow { margin-bottom: 2px; }
+
+    .stage {
+      display: flex; flex-wrap: wrap; align-items: flex-start;
+      gap: 18px; padding: 16px; margin-top: 8px;
+    }
+    .pacer-zone {
+      flex: 0 0 190px;
+      padding: 0;
+    }
+    .pacer-orb { width: 96px; height: 96px; }
+    .ring-bpm { font-size: 22px; }
+    .pacer-label { font-size: 16px; margin-top: 10px; }
+
+    .controls-col { flex: 1; min-width: 240px; }
+    canvas#wave { height: 40px; margin-top: 0; }
+    .hrv-panel { margin-top: 10px; padding: 10px 12px 6px; }
+    canvas#hrvwave { height: 54px; }
+    .progress-track { margin-top: 8px; }
+    .status-line { margin-top: 8px; font-size: 12.5px; }
+    button.primary { margin-top: 10px; padding: 12px; }
+    button.secondary { margin-top: 6px; padding: 10px; }
+    .result-grid { margin: 10px 0 0; }
+
+    .hint { width: 100%; order: 3; margin-top: 12px; padding-top: 12px; font-size: 11.5px; }
+    .disclaimer { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -105,27 +143,29 @@
       <div class="pacer-sub" id="pacerSub">6.0s IN · 6.0s OUT</div>
     </div>
 
-    <canvas id="wave" width="600" height="112"></canvas>
+    <div class="controls-col">
+      <canvas id="wave" width="600" height="112"></canvas>
 
-    <div class="hrv-panel">
-      <div class="hrv-panel-label">
-        <span>YOUR HRV WAVE</span>
-        <span id="coherenceScore">—</span>
+      <div class="hrv-panel">
+        <div class="hrv-panel-label">
+          <span>YOUR HRV WAVE</span>
+          <span id="coherenceScore">—</span>
+        </div>
+        <canvas id="hrvwave" width="600" height="90"></canvas>
+        <div class="hrv-panel-sub" id="hrvSub">Bigger, smoother waves = closer to your resonance frequency</div>
       </div>
-      <canvas id="hrvwave" width="600" height="90"></canvas>
-      <div class="hrv-panel-sub" id="hrvSub">Bigger, smoother waves = closer to your resonance frequency</div>
-    </div>
 
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-    <div class="status-line" id="statusLine">Tap start, then cover the rear camera and flash with your fingertip.</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="status-line" id="statusLine">Tap start, then cover the rear camera and flash with your fingertip.</div>
 
-    <button class="primary" id="startBtn">Start reading</button>
-    <button class="secondary" id="retryBtn" style="display:none">Measure again</button>
+      <button class="primary" id="startBtn">Start reading</button>
+      <button class="secondary" id="retryBtn" style="display:none">Measure again</button>
 
-    <div class="results" id="results">
-      <div class="result-grid">
-        <div class="result-card"><div class="val" id="avgBpm">—</div><div class="lbl">AVG BPM</div></div>
-        <div class="result-card"><div class="val" id="rmssd">—</div><div class="lbl">RMSSD · HRV (MS)</div></div>
+      <div class="results" id="results">
+        <div class="result-grid">
+          <div class="result-card"><div class="val" id="avgBpm">—</div><div class="lbl">AVG BPM</div></div>
+          <div class="result-card"><div class="val" id="rmssd">—</div><div class="lbl">RMSSD · HRV (MS)</div></div>
+        </div>
       </div>
     </div>
 
